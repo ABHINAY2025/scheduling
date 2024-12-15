@@ -107,18 +107,11 @@ const logger = {
       throw new Error('Invalid percentage value extracted');
     }
     
-    // Prepare data to save in Firestore with robust validation
+    // Prepare data to save in Firestore with only timestamp and percentage
     const documentData = {
       timestamp: Timestamp.fromDate(new Date()),  // Store the current timestamp
-      percentageComplete: parsedPercentage,  // Store the parsed percentage
-      rawContent: rowText,  // Store raw row content for reference
-      scrapedAt: Timestamp.fromDate(new Date()) // Use Firestore Timestamp for consistency
+      percentageComplete: parsedPercentage  // Store the parsed percentage only
     };
-    
-    // Validate data before saving to Firestore
-    if (!documentData.timestamp || isNaN(documentData.percentageComplete)) {
-      throw new Error('Invalid data, timestamp or percentage is missing');
-    }
     
     // Log the data before saving
     logger.log('Data to be saved in Firestore:', documentData);
