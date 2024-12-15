@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { Builder, By, Key, until } = require('selenium-webdriver');
 const { db } = require('./firebaseConfig');
 const { doc, setDoc, Timestamp } = require('firebase/firestore');
@@ -28,8 +29,8 @@ const logger = {
     const passwordField = await driver.findElement(By.name('txtPwd2'));
     
     // Enter credentials and submit
-    const password = "798940";
-    await usernameField.sendKeys('22p65a1207');
+    const password = process.env.SCRAPER_PASSWORD;  // Use password from environment
+    await usernameField.sendKeys(process.env.SCRAPER_USERNAME);  // Use username from environment
     await passwordField.sendKeys(password, Key.RETURN);
     
     // Wait for the iframe and switch to it
