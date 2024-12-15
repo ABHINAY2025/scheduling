@@ -115,6 +115,9 @@ const logger = {
       scrapedAt: Timestamp.fromDate(new Date()) // Use Firestore Timestamp for consistency
     };
     
+    // Log the data before saving
+    logger.log('Data to be saved in Firestore:', documentData);
+    
     // Save to Firestore with enhanced error handling
     const documentRef = doc(db, "reports", "performance_total");
     
@@ -157,4 +160,3 @@ const logger = {
     process.exit();
   }
 })();
-/// both per and row
