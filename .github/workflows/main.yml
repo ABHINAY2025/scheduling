@@ -1,0 +1,47 @@
+name: Run Web Scraper
+
+on:
+  schedule:
+    - cron: '*5 * * * *'  # Run every 5 minutes
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  run_scraper:
+    runs-on: windows-latest  # Use Windows runner
+
+    steps:
+      # Checkout the repository to get access to the code
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Set up Node.js with the desired version
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'  # Use Node.js 16 or your desired version
+
+      # Install dependencies using package.json
+      - name: Install dependencies
+        run: |
+          npm install  # This will install all dependencies listed in package.json
+
+      # Set up Firebase environment variables
+      - name: Set up environment variables for Firebase
+        run: |
+          echo "FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}" >> $GITHUB_ENV
+          echo "FIREBASE_AUTH_DOMAIN=${{ secrets.FIREBASE_AUTH_DOMAIN }}" >> $GITHUB_ENV
+          echo "FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}" >> $GITHUB_ENV
+          echo "FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }}" >> $GITHUB_ENV
+          echo "FIREBASE_MESSAGING_SENDER_ID=${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}" >> $GITHUB_ENV
+          echo "FIREBASE_APP_ID=${{ secrets.FIREBASE_APP_ID }}" >> $GITHUB_ENV
+          echo "FIREBASE_MEASUREMENT_ID=${{ secrets.FIREBASE_MEASUREMENT_ID }}" >> $GITHUB_ENV
+
+      # Print Firebase API key for debugging (ensure to remove after confirmation)
+      - name: Print Firebase API Key
+        run: |
+          echo "FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}"
+
+      # Run the scraper script
+      - name: Run Scraper
+        run: |
+          node inx.js  # Execute your scraping script
