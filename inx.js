@@ -43,7 +43,7 @@ const logger = {
 
 async function retrieveTotalRow() {
   let driver;
-  
+
   try {
     // Initialize the Selenium driver
     driver = await new Builder().forBrowser('chrome').build();
@@ -113,14 +113,14 @@ async function retrieveTotalRow() {
     
     // Prepare data to save in Firestore with timestamp as a string
     const documentData = {
-      timestamp: Timestamp.fromDate(new Date("2024-12-15T19:08:58.417Z")), // Convert to Firestore Timestamp
+      timestamp: Timestamp.fromDate(new Date()), // Use current time for the timestamp
       percentageComplete: parsedPercentage,
       rawContent: rowText,
-      scrapedAt: Timestamp.fromDate(new Date("2024-12-15T19:08:58.417Z")), // Convert to Firestore Timestamp
+      scrapedAt: Timestamp.fromDate(new Date()), // Use current time for scrapedAt
       metadata: {
         username: username,
         source: "ECAP Portal",
-        extractedAt: Timestamp.fromDate(new Date("2024-12-15T19:08:58.417Z")) // Convert to Firestore Timestamp
+        extractedAt: Timestamp.fromDate(new Date()) // Use current time for extractedAt
       }
     };
 
