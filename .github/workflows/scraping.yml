@@ -24,6 +24,7 @@ jobs:
         run: |
           npm install selenium-webdriver  # Install selenium-webdriver
           npm install chromedriver        # Install chromedriver
+          npm install dotenv        # Install dotenv
 
       # Run the scraper script
       - name: Run Scraper
