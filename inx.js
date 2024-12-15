@@ -81,8 +81,9 @@ const { doc, setDoc } = require('firebase/firestore'); // Firestore functions
       await driver.quit();
       console.log('Driver quit successfully!');
     }
-    
+
     // Explicitly exit the process
+    console.log('Exiting process...');
     process.exit();
   }
 })();
