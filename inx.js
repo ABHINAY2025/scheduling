@@ -1,6 +1,6 @@
 const fs = require('fs');
 const { Builder, By, Key, until } = require('selenium-webdriver');
-const { db } = require('./firebaseConfig'); // Import from separate config file
+const { db } = require('./firebaseConfig');
 const { doc, setDoc, Timestamp } = require('firebase/firestore');
 
 // Logging utility
@@ -76,21 +76,22 @@ const logger = {
     fs.writeFileSync(localFilePath, rowText, 'utf8');
     logger.log(`Row content saved to ${localFilePath}`);
     
+    // Parse the row text to extract meaningful data
+    const [, total, completed, percentage] = rowText.split(/\s+/);
+    
     // Prepare data to save in Firestore with robust validation
-    const MAX_CONTENT_LENGTH = 10000;
     const documentData = {
       timestamp: Timestamp.fromDate(new Date()),
-      rowContent: rowText.length > MAX_CONTENT_LENGTH 
-        ? rowText.substring(0, MAX_CONTENT_LENGTH) 
-        : rowText,
-      contentTruncated: rowText.length > MAX_CONTENT_LENGTH,
-      sourceUrl: await driver.getCurrentUrl(),
+      total: parseInt(total, 10),
+      completed: parseInt(completed, 10),
+      percentageComplete: parseFloat(percentage),
+      rawContent: rowText,
       scrapedAt: new Date().toISOString()
     };
     
     // Validate document data
-    if (!documentData.rowContent) {
-      throw new Error('Row content cannot be empty');
+    if (isNaN(documentData.total) || isNaN(documentData.completed)) {
+      throw new Error('Invalid numeric data');
     }
     
     // Save to Firestore with enhanced error handling
@@ -108,7 +109,7 @@ const logger = {
         details: firestoreError.details,
         documentData: JSON.stringify(documentData, null, 2)
       });
-      throw firestoreError; // Re-throw to be caught by outer catch
+      throw firestoreError;
     }
     
   } catch (error) {
