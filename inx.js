@@ -1,7 +1,12 @@
 require('dotenv').config();  // Load environment variables from .env file
 const { Builder, By, Key, until } = require('selenium-webdriver');
 const { initializeApp } = require("firebase/app");
-const { getFirestore, doc, setDoc, serverTimestamp } = require('firebase/firestore');
+const { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  serverTimestamp 
+} = require('firebase/firestore');
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -106,28 +111,27 @@ const logger = {
       throw new Error('Invalid percentage value extracted');
     }
     
-    // Prepare data to save in Firestore with robust validation
-    const documentData = {
-      timestamp: serverTimestamp(), // Use server timestamp
-      percentageComplete: parsedPercentage,
-      rawContent: rowText,
-      scrapedAt: serverTimestamp() // Use server timestamp
-    };
-    
     // Save to Firestore with enhanced error handling
-    const documentRef = doc(db, "reports", "performance_total");
-    
     try {
-      await setDoc(documentRef, documentData);
+      const docRef = await addDoc(collection(db, "performance_reports"), {
+        timestamp: serverTimestamp(),
+        percentageComplete: parsedPercentage,
+        rawContent: rowText,
+        scrapedAt: serverTimestamp(),
+        metadata: {
+          username: username,
+          source: 'ECAP Portal'
+        }
+      });
+      
       logger.log('Data saved to Firestore successfully!', {
-        documentId: documentRef.id
+        documentId: docRef.id
       });
     } catch (firestoreError) {
       logger.error('Firestore Save Error', {
         code: firestoreError.code,
         message: firestoreError.message,
-        details: firestoreError.details,
-        documentData: JSON.stringify(documentData, null, 2)
+        stack: firestoreError.stack
       });
       throw firestoreError;
     }    
