@@ -1,10 +1,10 @@
-require('dotenv').config();  // Load environment variables from .env file
+require('dotenv').config(); // Load environment variables from .env file
 const { Builder, By, Key, until } = require('selenium-webdriver');
 const { initializeApp } = require("firebase/app");
 const { getFirestore } = require("firebase/firestore");
 const { doc, setDoc } = require('firebase/firestore');
 
-// Firebase configuration from environment variables
+// Firebase configuration
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
   authDomain: process.env.FIREBASE_AUTH_DOMAIN,
@@ -15,6 +15,12 @@ const firebaseConfig = {
   measurementId: process.env.FIREBASE_MEASUREMENT_ID,
 };
 
+// Validate Firebase configuration
+if (!firebaseConfig.projectId) {
+  console.error("Error: Firebase configuration is incomplete. Check your .env file.");
+  process.exit(1);
+}
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -22,126 +28,87 @@ const db = getFirestore(app);
 // Logging utility with custom date format
 const logger = {
   log: (message, data) => {
-    const formattedDate = new Date().toLocaleString('en-US', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
-    });
+    const formattedDate = new Date().toLocaleString();
     console.log(`[${formattedDate}] ${message}`, data || '');
   },
   error: (message, error) => {
-    const formattedDate = new Date().toLocaleString('en-US', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
-    });
+    const formattedDate = new Date().toLocaleString();
     console.error(`[${formattedDate}] ERROR: ${message}`, error || '');
   }
 };
 
 (async function retrieveTotalRow() {
   let driver;
-  
+
   try {
-    // Initialize the Selenium driver
+    // Initialize Selenium WebDriver
     driver = await new Builder().forBrowser('chrome').build();
-    
+
+    // Navigate to the login page
     logger.log('Navigating to login page');
     await driver.get('http://119.235.51.91/ecap/Default.aspx?ReturnUrl=%2fecap%2fmain.aspx');
-    
-    // Wait for login fields
+
+    // Wait for login fields and perform login
     await driver.wait(until.elementLocated(By.name('txtId2')), 10000);
-    const usernameField = await driver.findElement(By.name('txtId2'));
-    const passwordField = await driver.findElement(By.name('txtPwd2'));
-    
-    // Enter hardcoded username and password
-    const username = "22p65a1207";  // Hardcoded username
-    const password = "798940";  // Hardcoded password
-    await usernameField.sendKeys(username);  // Use hardcoded username
-    await passwordField.sendKeys(password, Key.RETURN);
-    
-    // Wait for the iframe and switch to it
+    await driver.findElement(By.name('txtId2')).sendKeys("22p65a1207"); // Hardcoded username
+    await driver.findElement(By.name('txtPwd2')).sendKeys("798940", Key.RETURN); // Hardcoded password
+
+    // Wait for iframe and switch to it
     await driver.wait(until.elementLocated(By.id('capIframeId')), 10000);
     const iframeElement = await driver.findElement(By.id('capIframeId'));
     await driver.switchTo().frame(iframeElement);
-    
-    // Locate the accordion headers and find the desired one
-    const accordionHeaders = await driver.wait(
-      until.elementsLocated(By.css('h1.ui-accordion-header')),
-      10000
-    );
-    
-    let performanceHeaderFound = false;
-    for (const header of accordionHeaders) {
+
+    // Click the "PERFORMANCE (Present)" accordion
+    const headers = await driver.wait(until.elementsLocated(By.css('h1.ui-accordion-header')), 10000);
+    let performanceClicked = false;
+
+    for (const header of headers) {
       const text = await header.getText();
       if (text.includes('PERFORMANCE (Present)')) {
         await driver.executeScript('arguments[0].scrollIntoView(true);', header);
         await header.click();
-        logger.log('Accordion with "PERFORMANCE (Present)" clicked successfully!');
-        performanceHeaderFound = true;
+        logger.log('Accordion "PERFORMANCE (Present)" clicked successfully!');
+        performanceClicked = true;
         break;
       }
     }
-    
-    if (!performanceHeaderFound) {
-      throw new Error('Performance header not found');
-    }
-    
-    // Locate the TOTAL row
+
+    if (!performanceClicked) throw new Error('Performance header not found');
+
+    // Locate the "TOTAL" row
     const totalRow = await driver.wait(
       until.elementLocated(By.xpath("//tr[@class='reportHeading2WithBackground' and td[text()='TOTAL']]")),
       10000
     );
-    
-    // Scroll and extract row text
+
     await driver.executeScript('arguments[0].scrollIntoView(true);', totalRow);
     const rowText = await totalRow.getText();
     logger.log('Row Content Extracted:', rowText);
-    
-    // Parse the row text to extract meaningful data
+
+    // Parse and validate extracted row text
     const [, total, completed, percentage] = rowText.split(/\s+/);
-    
-    // Prepare data to save in Firestore with robust validation (no timestamp fields)
-    const parsedPercentage = parseFloat(percentage.replace('%', '').trim());
-    if (isNaN(parsedPercentage)) {
-      logger.error('Invalid percentage value extracted', { percentage });
-      throw new Error('Invalid percentage value extracted');
+    if (!percentage || !percentage.includes('%')) {
+      throw new Error("Invalid percentage value extracted");
     }
 
-    // Prepare data without timestamp
+    const parsedPercentage = parseFloat(percentage.replace('%', '').trim());
+    if (isNaN(parsedPercentage)) throw new Error("Parsed percentage is not a number");
+
+    // Prepare data for Firestore
     const documentData = {
-      percentageComplete: parsedPercentage,  // Store the parsed percentage
+      percentageComplete: parsedPercentage,
+      total: total || null,
+      completed: completed || null,
     };
 
-    // Validate before saving
-    console.log('Document Data to Save:', documentData);
-
-    // Save to Firestore with enhanced error handling
+    // Save data to Firestore
     const documentRef = doc(db, "reports", "performance_total");
+    await setDoc(documentRef, documentData);
+    logger.log('Data saved to Firestore successfully!', documentData);
 
-    try {
-      await setDoc(documentRef, documentData);
-      logger.log('Data saved to Firestore successfully!', {
-        documentId: documentRef.id
-      });
-    } catch (firestoreError) {
-      logger.error('Firestore Save Error', {
-        code: firestoreError.code,
-        message: firestoreError.message,
-        details: firestoreError.details,
-        documentData: JSON.stringify(documentData, null, 2)
-      });
-      throw firestoreError;
-    }
-    
   } catch (error) {
-    logger.error('Comprehensive Scraping Error', {
-      message: error.message,
-      name: error.name,
-      stack: error.stack,
-      code: error.code || 'N/A'
-    });
-    
+    logger.error('An error occurred', error);
   } finally {
-    // Ensure driver quits
     if (driver) {
       try {
         await driver.quit();
@@ -150,9 +117,7 @@ const logger = {
         logger.error('Error quitting driver', quitError);
       }
     }
-    
-    // Explicitly exit process
-    logger.log('Exiting process...');
+    logger.log('Process exiting...');
     process.exit();
   }
 })();
