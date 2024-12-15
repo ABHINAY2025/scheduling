@@ -15,5 +15,5 @@ jobs:
           node-version: '16'
       - name: Install dependencies
         run: npm install
-      - name: Run Scraper
+      - name: Run inx
         run: node inx.js
