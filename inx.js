@@ -1,10 +1,15 @@
-require('dotenv').config(); // Load environment variables from .env file
+require('dotenv').config();  // Load environment variables
 const { Builder, By, Key, until } = require('selenium-webdriver');
 const { initializeApp } = require("firebase/app");
 const { getFirestore } = require("firebase/firestore");
-const { doc, setDoc } = require('firebase/firestore');
+const { doc, setDoc, Timestamp } = require('firebase/firestore');
 
-// Firebase configuration
+// Validate environment variables
+if (!process.env.FIREBASE_API_KEY || !process.env.FIREBASE_PROJECT_ID) {
+  console.error('Missing Firebase configuration in .env file. Exiting...');
+  process.exit(1);
+}
+
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
   authDomain: process.env.FIREBASE_AUTH_DOMAIN,
@@ -15,109 +20,83 @@ const firebaseConfig = {
   measurementId: process.env.FIREBASE_MEASUREMENT_ID,
 };
 
-// Validate Firebase configuration
-if (!firebaseConfig.projectId) {
-  console.error("Error: Firebase configuration is incomplete. Check your .env file.");
-  process.exit(1);
-}
-
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Logging utility with custom date format
 const logger = {
-  log: (message, data) => {
-    const formattedDate = new Date().toLocaleString();
-    console.log(`[${formattedDate}] ${message}`, data || '');
-  },
-  error: (message, error) => {
-    const formattedDate = new Date().toLocaleString();
-    console.error(`[${formattedDate}] ERROR: ${message}`, error || '');
-  }
+  log: (message, data) => console.log(`[${new Date().toLocaleString()}] ${message}`, data || ''),
+  error: (message, error) => console.error(`[${new Date().toLocaleString()}] ERROR: ${message}`, error || '')
 };
 
 (async function retrieveTotalRow() {
   let driver;
-
   try {
-    // Initialize Selenium WebDriver
     driver = await new Builder().forBrowser('chrome').build();
-
-    // Navigate to the login page
     logger.log('Navigating to login page');
     await driver.get('http://119.235.51.91/ecap/Default.aspx?ReturnUrl=%2fecap%2fmain.aspx');
 
-    // Wait for login fields and perform login
     await driver.wait(until.elementLocated(By.name('txtId2')), 10000);
-    await driver.findElement(By.name('txtId2')).sendKeys("22p65a1207"); // Hardcoded username
-    await driver.findElement(By.name('txtPwd2')).sendKeys("798940", Key.RETURN); // Hardcoded password
+    await driver.findElement(By.name('txtId2')).sendKeys("22p65a1207");
+    await driver.findElement(By.name('txtPwd2')).sendKeys("798940", Key.RETURN);
 
-    // Wait for iframe and switch to it
     await driver.wait(until.elementLocated(By.id('capIframeId')), 10000);
-    const iframeElement = await driver.findElement(By.id('capIframeId'));
-    await driver.switchTo().frame(iframeElement);
+    await driver.switchTo().frame(await driver.findElement(By.id('capIframeId')));
 
-    // Click the "PERFORMANCE (Present)" accordion
     const headers = await driver.wait(until.elementsLocated(By.css('h1.ui-accordion-header')), 10000);
-    let performanceClicked = false;
-
+    let performanceHeaderClicked = false;
     for (const header of headers) {
-      const text = await header.getText();
-      if (text.includes('PERFORMANCE (Present)')) {
+      if ((await header.getText()).includes('PERFORMANCE (Present)')) {
         await driver.executeScript('arguments[0].scrollIntoView(true);', header);
         await header.click();
-        logger.log('Accordion "PERFORMANCE (Present)" clicked successfully!');
-        performanceClicked = true;
+        performanceHeaderClicked = true;
         break;
       }
     }
+    if (!performanceHeaderClicked) throw new Error('PERFORMANCE header not found');
 
-    if (!performanceClicked) throw new Error('Performance header not found');
-
-    // Locate the "TOTAL" row
     const totalRow = await driver.wait(
       until.elementLocated(By.xpath("//tr[@class='reportHeading2WithBackground' and td[text()='TOTAL']]")),
       10000
     );
-
     await driver.executeScript('arguments[0].scrollIntoView(true);', totalRow);
     const rowText = await totalRow.getText();
-    logger.log('Row Content Extracted:', rowText);
+    const percentage = await totalRow.findElement(By.xpath("./td[last()]"));
+    const parsedPercentage = parseFloat((await percentage.getText()).replace('%', '').trim());
+    if (isNaN(parsedPercentage)) throw new Error('Invalid percentage value');
 
-    // Parse and validate extracted row text
-    const [, total, completed, percentage] = rowText.split(/\s+/);
-    if (!percentage || !percentage.includes('%')) {
-      throw new Error("Invalid percentage value extracted");
-    }
-
-    const parsedPercentage = parseFloat(percentage.replace('%', '').trim());
-    if (isNaN(parsedPercentage)) throw new Error("Parsed percentage is not a number");
-
-    // Prepare data for Firestore
     const documentData = {
+      timestamp: Timestamp.fromDate(new Date()),
       percentageComplete: parsedPercentage,
-      total: total || null,
-      completed: completed || null,
+      rawContent: rowText,
+      scrapedAt: Timestamp.fromDate(new Date())
     };
 
-    // Save data to Firestore
-    const documentRef = doc(db, "reports", "performance_total");
-    await setDoc(documentRef, documentData);
-    logger.log('Data saved to Firestore successfully!', documentData);
+    await retryFirestoreWrite(doc(db, "reports", "performance_total"), documentData, 3);
+    logger.log('Firestore write completed successfully');
 
   } catch (error) {
-    logger.error('An error occurred', error);
+    logger.error('Scraping Error', { message: error.message, stack: error.stack });
   } finally {
     if (driver) {
       try {
         await driver.quit();
         logger.log('Driver quit successfully');
       } catch (quitError) {
-        logger.error('Error quitting driver', quitError);
+        logger.error('Driver quit failed', quitError);
       }
     }
-    logger.log('Process exiting...');
     process.exit();
   }
 })();
+
+async function retryFirestoreWrite(ref, data, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      await setDoc(ref, data);
+      return;
+    } catch (error) {
+      logger.error(`Attempt ${attempt} failed`, error);
+      if (attempt === retries) throw error;
+    }
+  }
+}
