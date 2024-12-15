@@ -1,15 +1,10 @@
-require('dotenv').config();  // Load environment variables
+  // Optional: if you're using dotenv locally for testing
 const { Builder, By, Key, until } = require('selenium-webdriver');
 const { initializeApp } = require("firebase/app");
 const { getFirestore } = require("firebase/firestore");
 const { doc, setDoc, Timestamp } = require('firebase/firestore');
 
-// Validate environment variables
-if (!process.env.FIREBASE_API_KEY || !process.env.FIREBASE_PROJECT_ID) {
-  console.error('Missing Firebase configuration in .env file. Exiting...');
-  process.exit(1);
-}
-
+// Firebase configuration from environment variables (set by GitHub Actions)
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
   authDomain: process.env.FIREBASE_AUTH_DOMAIN,
@@ -20,83 +15,145 @@ const firebaseConfig = {
   measurementId: process.env.FIREBASE_MEASUREMENT_ID,
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// Logging utility with custom date format
 const logger = {
-  log: (message, data) => console.log(`[${new Date().toLocaleString()}] ${message}`, data || ''),
-  error: (message, error) => console.error(`[${new Date().toLocaleString()}] ERROR: ${message}`, error || '')
+  log: (message, data) => {
+    const formattedDate = new Date().toLocaleString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+    });
+    console.log(`[${formattedDate}] ${message}`, data || '');
+  },
+  error: (message, error) => {
+    const formattedDate = new Date().toLocaleString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+    });
+    console.error(`[${formattedDate}] ERROR: ${message}`, error || '');
+  }
 };
 
 (async function retrieveTotalRow() {
   let driver;
+
   try {
+    // Initialize the Selenium driver
     driver = await new Builder().forBrowser('chrome').build();
+
     logger.log('Navigating to login page');
     await driver.get('http://119.235.51.91/ecap/Default.aspx?ReturnUrl=%2fecap%2fmain.aspx');
 
+    // Wait for login fields
     await driver.wait(until.elementLocated(By.name('txtId2')), 10000);
-    await driver.findElement(By.name('txtId2')).sendKeys("22p65a1207");
-    await driver.findElement(By.name('txtPwd2')).sendKeys("798940", Key.RETURN);
+    const usernameField = await driver.findElement(By.name('txtId2'));
+    const passwordField = await driver.findElement(By.name('txtPwd2'));
 
+    // Enter hardcoded username and password
+    const username = "22p65a1207";  // Hardcoded username
+    const password = "798940";  // Hardcoded password
+    await usernameField.sendKeys(username);  // Use hardcoded username
+    await passwordField.sendKeys(password, Key.RETURN);
+
+    // Wait for the iframe and switch to it
     await driver.wait(until.elementLocated(By.id('capIframeId')), 10000);
-    await driver.switchTo().frame(await driver.findElement(By.id('capIframeId')));
+    const iframeElement = await driver.findElement(By.id('capIframeId'));
+    await driver.switchTo().frame(iframeElement);
 
-    const headers = await driver.wait(until.elementsLocated(By.css('h1.ui-accordion-header')), 10000);
-    let performanceHeaderClicked = false;
-    for (const header of headers) {
-      if ((await header.getText()).includes('PERFORMANCE (Present)')) {
+    // Locate the accordion headers and find the desired one
+    const accordionHeaders = await driver.wait(
+      until.elementsLocated(By.css('h1.ui-accordion-header')),
+      10000
+    );
+
+    let performanceHeaderFound = false;
+    for (const header of accordionHeaders) {
+      const text = await header.getText();
+      if (text.includes('PERFORMANCE (Present)')) {
         await driver.executeScript('arguments[0].scrollIntoView(true);', header);
         await header.click();
-        performanceHeaderClicked = true;
+        logger.log('Accordion with "PERFORMANCE (Present)" clicked successfully!');
+        performanceHeaderFound = true;
         break;
       }
     }
-    if (!performanceHeaderClicked) throw new Error('PERFORMANCE header not found');
 
+    if (!performanceHeaderFound) {
+      throw new Error('Performance header not found');
+    }
+
+    // Locate the TOTAL row
     const totalRow = await driver.wait(
       until.elementLocated(By.xpath("//tr[@class='reportHeading2WithBackground' and td[text()='TOTAL']]")),
       10000
     );
+
+    // Scroll and extract row text
     await driver.executeScript('arguments[0].scrollIntoView(true);', totalRow);
     const rowText = await totalRow.getText();
-    const percentage = await totalRow.findElement(By.xpath("./td[last()]"));
-    const parsedPercentage = parseFloat((await percentage.getText()).replace('%', '').trim());
-    if (isNaN(parsedPercentage)) throw new Error('Invalid percentage value');
+    logger.log('Row Content Extracted:', rowText);
 
+    // Locate the last cell in the row (attendance percentage)
+    const percentageCell = await totalRow.findElement(By.xpath("./td[last()]"));
+    const percentage = await percentageCell.getText(); // Get the percentage value
+    logger.log('Attendance Percentage Extracted:', percentage);
+
+    // Parse the percentage value (ensure it's a valid number)
+    const parsedPercentage = parseFloat(percentage.replace('%', '').trim());
+    if (isNaN(parsedPercentage)) {
+      throw new Error('Invalid percentage value extracted');
+    }
+
+    // Prepare data to save in Firestore with robust validation
     const documentData = {
       timestamp: Timestamp.fromDate(new Date()),
-      percentageComplete: parsedPercentage,
-      rawContent: rowText,
-      scrapedAt: Timestamp.fromDate(new Date())
+      percentageComplete: parsedPercentage,  // Store the parsed percentage
+      rawContent: rowText,  // Store raw row content for reference
+      scrapedAt: Timestamp.fromDate(new Date()) // Use Firestore Timestamp for consistency
     };
 
-    await retryFirestoreWrite(doc(db, "reports", "performance_total"), documentData, 3);
-    logger.log('Firestore write completed successfully');
+    // Save to Firestore with enhanced error handling
+    const documentRef = doc(db, "reports", "performance_total");
+
+    try {
+      await setDoc(documentRef, documentData);
+      logger.log('Data saved to Firestore successfully!', {
+        documentId: documentRef.id
+      });
+    } catch (firestoreError) {
+      logger.error('Firestore Save Error', {
+        code: firestoreError.code,
+        message: firestoreError.message,
+        details: firestoreError.details,
+        documentData: JSON.stringify(documentData, null, 2)
+      });
+      throw firestoreError;
+    }
 
   } catch (error) {
-    logger.error('Scraping Error', { message: error.message, stack: error.stack });
+    logger.error('Comprehensive Scraping Error', {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+      code: error.code || 'N/A'
+    });
+
   } finally {
+    // Ensure driver quits
     if (driver) {
       try {
         await driver.quit();
         logger.log('Driver quit successfully');
       } catch (quitError) {
-        logger.error('Driver quit failed', quitError);
+        logger.error('Error quitting driver', quitError);
       }
     }
+
+    // Explicitly exit process
+    logger.log('Exiting process...');
     process.exit();
   }
 })();
-
-async function retryFirestoreWrite(ref, data, retries = 3) {
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      await setDoc(ref, data);
-      return;
-    } catch (error) {
-      logger.error(`Attempt ${attempt} failed`, error);
-      if (attempt === retries) throw error;
-    }
-  }
-}
