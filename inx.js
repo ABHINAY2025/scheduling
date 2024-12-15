@@ -1,4 +1,3 @@
-const fs = require('fs');
 const { Builder, By, Key, until } = require('selenium-webdriver');
 const { db } = require('./firebaseConfig');
 const { doc, setDoc, Timestamp } = require('firebase/firestore');
@@ -71,11 +70,6 @@ const logger = {
     const rowText = await totalRow.getText();
     logger.log('Row Content Extracted:', rowText);
     
-    // Save the data locally as a text file
-    const localFilePath = `totalRow_${Date.now()}.txt`;
-    fs.writeFileSync(localFilePath, rowText, 'utf8');
-    logger.log(`Row content saved to ${localFilePath}`);
-    
     // Parse the row text to extract meaningful data
     const [, total, completed, percentage] = rowText.split(/\s+/);
     
@@ -86,7 +80,7 @@ const logger = {
       completed: parseInt(completed, 10),
       percentageComplete: parseFloat(percentage),
       rawContent: rowText,
-      scrapedAt: new Date().toISOString()
+      scrapedAt: Timestamp.fromDate(new Date()) // Use Firestore Timestamp for consistency
     };
     
     // Validate document data
@@ -95,7 +89,7 @@ const logger = {
     }
     
     // Save to Firestore with enhanced error handling
-    const documentRef = doc(db, "reports", `performance_total_${Date.now()}`);
+    const documentRef = doc(db, "reports", "performance_total");
     
     try {
       await setDoc(documentRef, documentData);
