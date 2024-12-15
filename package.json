@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "inx.js",
+  "type": "module",  // Add this line to enable ES modules
   "scripts": {
     "start": "node inx.js"
   },
   "dependencies": {
-    "dotenv": "^10.0.0", 
+    "dotenv": "^10.0.0",
     "firebase": "^9.0.0",
     "selenium-webdriver": "^4.0.0",
     "chromedriver": "^100.0.0"
