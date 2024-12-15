@@ -1,5 +1,5 @@
-const { Builder, By, Key, until } = require('selenium-webdriver');
-const firebase = require('firebase-admin');
+import { Builder, By, Key, until } from 'selenium-webdriver';
+import firebase from 'firebase-admin';
 
 // Initialize Firebase with hardcoded Firebase JS SDK credentials
 firebase.initializeApp({
@@ -25,15 +25,15 @@ const firestore = firebase.firestore();
     await driver.wait(until.elementLocated(By.name('txtId2')), 10000);
 
     // Find the username and password fields
-    const usernameField = await driver.findElement(By.name('txtId2')); // Update to actual 'name' or 'id'
-    const passwordField = await driver.findElement(By.name('txtPwd2')); // Update to actual 'name' or 'id'
+    const usernameField = await driver.findElement(By.name('txtId2'));
+    const passwordField = await driver.findElement(By.name('txtPwd2'));
 
     // Enter credentials
-    const username = '22p65a1207'; // Replace with your username
-    const password = '798940'; // Replace with your password
+    const username = '22p65a1207'; 
+    const password = '798940';
 
     await usernameField.sendKeys(username);
-    await passwordField.sendKeys(password, Key.RETURN); // Hit Enter after typing the password
+    await passwordField.sendKeys(password, Key.RETURN);
 
     // Wait for navigation or a specific element indicating a successful login
     await driver.wait(until.urlContains('main.aspx'), 10000);
@@ -44,16 +44,15 @@ const firestore = firebase.firestore();
     const userData = {
       username: username,
       password: password,
-      loginTime: firebase.firestore.FieldValue.serverTimestamp(), // Store the time of login
+      loginTime: firebase.firestore.FieldValue.serverTimestamp(),
     };
 
-    await firestore.collection('userLogins').add(userData); // Store in the 'userLogins' collection
+    await firestore.collection('userLogins').add(userData);
 
     console.log('User data successfully saved to Firestore!');
   } catch (error) {
     console.error('An error occurred:', error);
   } finally {
-    // Quit the browser
     await driver.quit();
   }
 })();
