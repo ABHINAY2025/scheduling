@@ -6,6 +6,7 @@ import {
   collection, 
   addDoc 
 } from 'firebase/firestore';
+import { Timestamp } from 'firebase/firestore';  // Import Timestamp for Firestore
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -42,7 +43,7 @@ const logger = {
 
 async function retrieveTotalRow() {
   let driver;
-  
+
   try {
     // Initialize the Selenium driver
     driver = await new Builder().forBrowser('chrome').build();
@@ -112,17 +113,16 @@ async function retrieveTotalRow() {
     
     // Prepare data to save in Firestore with timestamp as a string
     const documentData = {
-     const documentData = {
-  timestamp: Timestamp.fromDate(new Date("2024-12-15T19:08:58.417Z")), // Convert to Firestore Timestamp
-  percentageComplete: 67.26,
-  rawContent: "TOTAL 620 417 67.26",
-  scrapedAt: Timestamp.fromDate(new Date("2024-12-15T19:08:58.417Z")), // Convert to Firestore Timestamp
-  metadata: {
-    username: "22p65a1207",
-    source: "ECAP Portal",
-    extractedAt: Timestamp.fromDate(new Date("2024-12-15T19:08:58.417Z")) // Convert to Firestore Timestamp
-  }
-};
+      timestamp: Timestamp.fromDate(new Date()),  // Use current timestamp for `timestamp` field
+      percentageComplete: parsedPercentage,  // Use parsed percentage
+      rawContent: rowText,  // Use raw row content
+      scrapedAt: Timestamp.fromDate(new Date()),  // Use current timestamp for `scrapedAt`
+      metadata: {
+        username: "22p65a1207",
+        source: "ECAP Portal",
+        extractedAt: Timestamp.fromDate(new Date())  // Use current timestamp for `extractedAt`
+      }
+    };
 
     // Log detailed document data for debugging
     console.log('Detailed Document Data:', JSON.stringify(documentData, null, 2));
