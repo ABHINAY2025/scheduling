@@ -2,26 +2,31 @@ name: Run Web Scraper
 
 on:
   schedule:
-    - cron: '5 * * * *'  # This schedules the job to run every hour
-  workflow_dispatch:  # This allows you to manually trigger the job
+    - cron: '0 * * * *'  # Run every hour
+  workflow_dispatch:  # Allow manual triggering
 
 jobs:
   run_scraper:
-    runs-on: windows-latest  # Use Windows environment for the job
+    runs-on: windows-latest  # Use Windows runner
+
     steps:
+      # Checkout the repository to get access to the code
       - name: Checkout code
         uses: actions/checkout@v2
 
+      # Set up Node.js with the desired version
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '16'  # Use the Node.js version of your choice
+          node-version: '16'  # Use Node.js 16 or your desired version
 
-      - name: Install dependencies
+      # Install selenium-webdriver and chromedriver
+      - name: Install selenium-webdriver and chromedriver
         run: |
-          npm install  # Install your Node.js dependencies
-          choco install chromedriver  # Install ChromeDriver using Chocolatey
+          npm install selenium-webdriver  # Install selenium-webdriver
+          npm install chromedriver         # Install chromedriver
 
-      - name: Run inx
+      # Run the scraper script
+      - name: Run Scraper
         run: |
-          node inx.js  # Run your scraping script
+          node inx.js  # Execute your scraping script
