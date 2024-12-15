@@ -2,7 +2,7 @@ const fs = require('fs');
 const { Builder, By, Key, until } = require('selenium-webdriver');
 
 (async function retrieveTotalRow() {
-  let driver;
+  let driver;  // Declare the driver variable here
 
   try {
     // Initialize the driver
@@ -68,7 +68,7 @@ const { Builder, By, Key, until } = require('selenium-webdriver');
   } finally {
     // Ensure the driver is quit in case of an error or successful completion
     if (driver) {
-      await driver.quit();
+      await driver.quit();  // Quit only if driver was initialized
     }
   }
 })();
