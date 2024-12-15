@@ -4,11 +4,8 @@ import { initializeApp } from "firebase/app";
 import { 
   getFirestore, 
   collection, 
-  addDoc, 
-  Timestamp  
+  addDoc 
 } from 'firebase/firestore';
-
-// Modify your package.json to include "type": "module"
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -113,12 +110,12 @@ async function retrieveTotalRow() {
       throw new Error('Invalid percentage value extracted');
     }
     
-    // Prepare data to save in Firestore with robust validation
+    // Prepare data to save in Firestore with timestamp as a string
     const documentData = {
-      timestamp: Timestamp.now(), // Use Timestamp.now() explicitly
+      timestamp: new Date().toISOString(), // Convert current timestamp to ISO string
       percentageComplete: parsedPercentage,
       rawContent: rowText,
-      scrapedAt: Timestamp.now(), // Use Timestamp.now() explicitly
+      scrapedAt: new Date().toISOString(), // Use ISO string for scrapedAt
       metadata: {
         username: username,
         source: 'ECAP Portal',
