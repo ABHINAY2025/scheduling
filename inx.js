@@ -76,9 +76,13 @@ const { doc, setDoc } = require('firebase/firestore'); // Firestore functions
   } catch (error) {
     console.error('An error occurred:', error);
   } finally {
-    // Quit the driver
+    // Ensure the driver quits even if an error occurs
     if (driver) {
       await driver.quit();
+      console.log('Driver quit successfully!');
     }
+    
+    // Explicitly exit the process
+    process.exit();
   }
 })();
