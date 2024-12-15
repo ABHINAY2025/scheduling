@@ -112,16 +112,17 @@ async function retrieveTotalRow() {
     
     // Prepare data to save in Firestore with timestamp as a string
     const documentData = {
-      timestamp: new Date().toISOString(), // Convert current timestamp to ISO string
-      percentageComplete: parsedPercentage,
-      rawContent: rowText,
-      scrapedAt: new Date().toISOString(), // Use ISO string for scrapedAt
-      metadata: {
-        username: username,
-        source: 'ECAP Portal',
-        extractedAt: new Date().toISOString()
-      }
-    };
+     const documentData = {
+  timestamp: Timestamp.fromDate(new Date("2024-12-15T19:08:58.417Z")), // Convert to Firestore Timestamp
+  percentageComplete: 67.26,
+  rawContent: "TOTAL 620 417 67.26",
+  scrapedAt: Timestamp.fromDate(new Date("2024-12-15T19:08:58.417Z")), // Convert to Firestore Timestamp
+  metadata: {
+    username: "22p65a1207",
+    source: "ECAP Portal",
+    extractedAt: Timestamp.fromDate(new Date("2024-12-15T19:08:58.417Z")) // Convert to Firestore Timestamp
+  }
+};
 
     // Log detailed document data for debugging
     console.log('Detailed Document Data:', JSON.stringify(documentData, null, 2));
