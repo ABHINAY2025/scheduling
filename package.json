@@ -2,10 +2,10 @@
   "name": "scheduling",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",  // Update this if the main file is indeed "index.js"
+  "main": "index.js",  
   "type": "module",
   "scripts": {
-    "start": "node index.js"  // Update here if your main script file is index.js
+    "start": "node index.js"  
   },
   "dependencies": {
     "dotenv": "^10.0.0",
