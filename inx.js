@@ -1,13 +1,14 @@
-require('dotenv').config();  // Load environment variables from .env file
-const { Builder, By, Key, until } = require('selenium-webdriver');
-const { initializeApp } = require("firebase/app");
-const { 
+import 'dotenv/config';
+import { Builder, By, Key, until } from 'selenium-webdriver';
+import { initializeApp } from "firebase/app";
+import { 
   getFirestore, 
   collection, 
   addDoc, 
-  serverTimestamp,
-  Timestamp  // Explicitly import Timestamp
-} = require('firebase/firestore');
+  Timestamp  
+} from 'firebase/firestore';
+
+// Modify your package.json to include "type": "module"
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -42,7 +43,7 @@ const logger = {
   }
 };
 
-(async function retrieveTotalRow() {
+async function retrieveTotalRow() {
   let driver;
   
   try {
@@ -173,4 +174,7 @@ const logger = {
     logger.log('Exiting process...');
     process.exit();
   }
-})();
+}
+
+// Invoke the main function
+retrieveTotalRow();
