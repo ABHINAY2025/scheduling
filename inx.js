@@ -5,7 +5,8 @@ const {
   getFirestore, 
   collection, 
   addDoc, 
-  serverTimestamp 
+  serverTimestamp,
+  Timestamp  // Explicitly import Timestamp
 } = require('firebase/firestore');
 
 // Firebase configuration from environment variables
@@ -111,18 +112,30 @@ const logger = {
       throw new Error('Invalid percentage value extracted');
     }
     
+    // Prepare data to save in Firestore with robust validation
+    const documentData = {
+      timestamp: Timestamp.now(), // Use Timestamp.now() explicitly
+      percentageComplete: parsedPercentage,
+      rawContent: rowText,
+      scrapedAt: Timestamp.now(), // Use Timestamp.now() explicitly
+      metadata: {
+        username: username,
+        source: 'ECAP Portal',
+        extractedAt: new Date().toISOString()
+      }
+    };
+
+    // Log detailed document data for debugging
+    console.log('Detailed Document Data:', JSON.stringify(documentData, null, 2));
+    console.log('Document Data Types:', {
+      timestamp: typeof documentData.timestamp,
+      percentageComplete: typeof documentData.percentageComplete,
+      rawContent: typeof documentData.rawContent
+    });
+    
     // Save to Firestore with enhanced error handling
     try {
-      const docRef = await addDoc(collection(db, "performance_reports"), {
-        timestamp: serverTimestamp(),
-        percentageComplete: parsedPercentage,
-        rawContent: rowText,
-        scrapedAt: serverTimestamp(),
-        metadata: {
-          username: username,
-          source: 'ECAP Portal'
-        }
-      });
+      const docRef = await addDoc(collection(db, "performance_reports"), documentData);
       
       logger.log('Data saved to Firestore successfully!', {
         documentId: docRef.id
@@ -131,7 +144,8 @@ const logger = {
       logger.error('Firestore Save Error', {
         code: firestoreError.code,
         message: firestoreError.message,
-        stack: firestoreError.stack
+        stack: firestoreError.stack,
+        errorDetails: JSON.stringify(firestoreError, Object.getOwnPropertyNames(firestoreError), 2)
       });
       throw firestoreError;
     }    
