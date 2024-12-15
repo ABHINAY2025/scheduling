@@ -4,9 +4,9 @@ import { initializeApp } from "firebase/app";
 import { 
   getFirestore, 
   collection, 
-  addDoc 
+  addDoc, 
+  Timestamp 
 } from 'firebase/firestore';
-import { Timestamp } from 'firebase/firestore';  // Import Timestamp for Firestore
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -43,7 +43,7 @@ const logger = {
 
 async function retrieveTotalRow() {
   let driver;
-
+  
   try {
     // Initialize the Selenium driver
     driver = await new Builder().forBrowser('chrome').build();
@@ -113,14 +113,14 @@ async function retrieveTotalRow() {
     
     // Prepare data to save in Firestore with timestamp as a string
     const documentData = {
-      timestamp: Timestamp.fromDate(new Date()),  // Use current timestamp for `timestamp` field
-      percentageComplete: parsedPercentage,  // Use parsed percentage
-      rawContent: rowText,  // Use raw row content
-      scrapedAt: Timestamp.fromDate(new Date()),  // Use current timestamp for `scrapedAt`
+      timestamp: Timestamp.fromDate(new Date("2024-12-15T19:08:58.417Z")), // Convert to Firestore Timestamp
+      percentageComplete: parsedPercentage,
+      rawContent: rowText,
+      scrapedAt: Timestamp.fromDate(new Date("2024-12-15T19:08:58.417Z")), // Convert to Firestore Timestamp
       metadata: {
-        username: "22p65a1207",
+        username: username,
         source: "ECAP Portal",
-        extractedAt: Timestamp.fromDate(new Date())  // Use current timestamp for `extractedAt`
+        extractedAt: Timestamp.fromDate(new Date("2024-12-15T19:08:58.417Z")) // Convert to Firestore Timestamp
       }
     };
 
