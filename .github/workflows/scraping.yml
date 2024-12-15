@@ -1,25 +1,19 @@
-name: Run Scraper Every Hour
-
+name: Scraper Runner
 on:
   schedule:
-    - cron: '*/4 * * * *' # This cron expression runs the job every hour
-  workflow_dispatch: # Allows manual triggering of the action
-
+    - cron: '0 * * * *'  # Runs the scraper every hour
+  workflow_dispatch:  # Allows manual triggering
 jobs:
   run_scraper:
-    runs-on: ubuntu-latest # Run on the latest Ubuntu environment
-
+    runs-on: ubuntu-latest
     steps:
-    - name: Checkout the repository
-      uses: actions/checkout@v2 # Checks out the code from the repository
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '16' # Specify the Node.js version your scraper requires
-
-    - name: Install dependencies
-      run: npm install # Install any dependencies defined in package.json
-
-    - name: Run the scraper
-      run: node scraper.js # Replace with the actual command to run your scraper script
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - name: Install dependencies
+        run: npm install
+      - name: Run Scraper
+        run: node scraper.js
