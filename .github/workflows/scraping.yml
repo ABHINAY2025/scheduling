@@ -1,8 +1,7 @@
 name: Run Web Scraper
-
 on:
   schedule:
-    - cron: '5 * * * *'  # Run every hour
+    - cron: '*/5 * * * *'  # Run every 5 minutes
   workflow_dispatch:  # Allow manual triggering
 
 jobs:
@@ -24,7 +23,7 @@ jobs:
       - name: Install selenium-webdriver and chromedriver
         run: |
           npm install selenium-webdriver  # Install selenium-webdriver
-          npm install chromedriver         # Install chromedriver
+          npm install chromedriver        # Install chromedriver
 
       # Run the scraper script
       - name: Run Scraper
