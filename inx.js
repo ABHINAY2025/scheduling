@@ -33,6 +33,18 @@ const logger = {
   let driver;
   
   try {
+    // Debugging Environment Variables
+    logger.log('FIREBASE_API_KEY:', process.env.FIREBASE_API_KEY);
+    logger.log('SCRAPER_USERNAME:', process.env.SCRAPER_USERNAME);
+    logger.log('SCRAPER_PASSWORD:', process.env.SCRAPER_PASSWORD);
+
+    const username = process.env.SCRAPER_USERNAME;
+    const password = process.env.SCRAPER_PASSWORD;
+
+    if (!username || !password) {
+      throw new Error('Username or password not set in environment variables.');
+    }
+
     // Initialize the Selenium driver
     driver = await new Builder().forBrowser('chrome').build();
     
@@ -45,8 +57,7 @@ const logger = {
     const passwordField = await driver.findElement(By.name('txtPwd2'));
     
     // Enter credentials and submit
-    const password = process.env.SCRAPER_PASSWORD;  // Use password from environment
-    await usernameField.sendKeys(process.env.SCRAPER_USERNAME);  // Use username from environment
+    await usernameField.sendKeys(username);
     await passwordField.sendKeys(password, Key.RETURN);
     
     // Wait for the iframe and switch to it
