@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config();  // Load environment variables from .env file
 const { Builder, By, Key, until } = require('selenium-webdriver');
 const { initializeApp } = require("firebase/app");
 const { getFirestore } = require("firebase/firestore");
@@ -33,18 +33,6 @@ const logger = {
   let driver;
   
   try {
-    // Debugging Environment Variables
-    logger.log('FIREBASE_API_KEY:', process.env.FIREBASE_API_KEY);
-    logger.log('SCRAPER_USERNAME:', process.env.SCRAPER_USERNAME);
-    logger.log('SCRAPER_PASSWORD:', process.env.SCRAPER_PASSWORD);
-
-    const username = process.env.SCRAPER_USERNAME;
-    const password = process.env.SCRAPER_PASSWORD;
-
-    if (!username || !password) {
-      throw new Error('Username or password not set in environment variables.');
-    }
-
     // Initialize the Selenium driver
     driver = await new Builder().forBrowser('chrome').build();
     
@@ -56,8 +44,10 @@ const logger = {
     const usernameField = await driver.findElement(By.name('txtId2'));
     const passwordField = await driver.findElement(By.name('txtPwd2'));
     
-    // Enter credentials and submit
-    await usernameField.sendKeys(username);
+    // Enter hardcoded username and password
+    const username = "22p65a1207";  // Hardcoded username
+    const password = "798940";  // Hardcoded password
+    await usernameField.sendKeys(username);  // Use hardcoded username
     await passwordField.sendKeys(password, Key.RETURN);
     
     // Wait for the iframe and switch to it
