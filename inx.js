@@ -1,14 +1,9 @@
 import 'dotenv/config';
 import { Builder, By, Key, until } from 'selenium-webdriver';
 import { initializeApp } from "firebase/app";
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  Timestamp 
-} from 'firebase/firestore';
+import { getFirestore, collection, addDoc } from 'firebase/firestore';
 
-// Firebase configuration from environment variables
+// Firebase configuration using GitHub Secrets
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
   authDomain: process.env.FIREBASE_AUTH_DOMAIN,
@@ -111,40 +106,17 @@ async function retrieveTotalRow() {
       throw new Error('Invalid percentage value extracted');
     }
     
-    // Prepare data to save in Firestore with timestamp as a string
+    // Prepare data to save in Firestore
     const documentData = {
-      timestamp: Timestamp.fromDate(new Date()), // Use current time for the timestamp
-      percentageComplete: parsedPercentage,
-      rawContent: rowText,
-      scrapedAt: Timestamp.fromDate(new Date()), // Use current time for scrapedAt
-      metadata: {
-        username: username,
-        source: "ECAP Portal",
-        extractedAt: Timestamp.fromDate(new Date()) // Use current time for extractedAt
-      }
+      percentageComplete: parsedPercentage,  // Only saving percentage
     };
 
-    // Log detailed document data for debugging
-    console.log('Detailed Document Data:', JSON.stringify(documentData, null, 2));
-    console.log('Document Data Types:', {
-      timestamp: typeof documentData.timestamp,
-      percentageComplete: typeof documentData.percentageComplete,
-      rawContent: typeof documentData.rawContent
-    });
+    // Log the percentage value for debugging
+    console.log('Percentage Value:', parsedPercentage);
     
-    // Validate the data structure before saving
-    if (
-      !documentData.timestamp ||
-      isNaN(documentData.percentageComplete) ||
-      typeof documentData.rawContent !== 'string'
-    ) {
-      throw new Error('Invalid document data structure');
-    }
-
     // Save to Firestore with enhanced error handling
     try {
       const docRef = await addDoc(collection(db, "performance_reports"), documentData);
-      
       logger.log('Data saved to Firestore successfully!', {
         documentId: docRef.id
       });
