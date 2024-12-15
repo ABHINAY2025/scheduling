@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "inx.js",
-  "type": "module",  // Add this line to enable ES modules
+  "type": "module",  
   "scripts": {
     "start": "node inx.js"
   },
