@@ -102,16 +102,16 @@ const logger = {
     // Prepare data to save in Firestore with robust validation
     const documentData = {
       timestamp: Timestamp.fromDate(new Date()),
-      total: parseInt(total, 10),
-      completed: parseInt(completed, 10),
-      percentageComplete: parseFloat(percentage),
+      total: total.toString(),  // Convert to string
+      completed: completed.toString(),  // Convert to string
+      percentageComplete: percentage.toString(),  // Convert to string
       rawContent: rowText,
       scrapedAt: Timestamp.fromDate(new Date()) // Use Firestore Timestamp for consistency
     };
     
     // Validate document data
-    if (isNaN(documentData.total) || isNaN(documentData.completed) || isNaN(documentData.percentageComplete)) {
-      throw new Error('Invalid numeric data: ' + JSON.stringify(documentData));
+    if (!documentData.total || !documentData.completed || !documentData.percentageComplete) {
+      throw new Error('Invalid string data: ' + JSON.stringify(documentData));
     }
     
     // Save to Firestore with enhanced error handling
