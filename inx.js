@@ -1,6 +1,7 @@
-require('dotenv').config();  // Load environment variables from .env file
-const { Builder, By, Key, until } = require('selenium-webdriver');
-const { initializeApp } = require("firebase/app");
+// Import required modules
+import 'dotenv/config';  // Load environment variables from .env file
+import { Builder, By, Key, until } from 'selenium-webdriver';
+import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, setDoc, Timestamp } from 'firebase/firestore'; 
 
 // Firebase configuration from environment variables
