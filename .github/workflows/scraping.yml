@@ -17,16 +17,16 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '16'  # Use Node.js 16 or your desired version
+          node-version: '16'
 
-      # Install selenium-webdriver and chromedriver
+      # Install selenium-webdriver, chromedriver, and dotenv
       - name: Install selenium-webdriver and chromedriver
         run: |
-          npm install selenium-webdriver  # Install selenium-webdriver
-          npm install chromedriver        # Install chromedriver
-          npm install dotenv              # Install dotenv
+          npm install selenium-webdriver
+          npm install chromedriver
+          npm install dotenv
 
-      # Set up environment variables using GitHub Secrets
+      # Set up Firebase environment variables
       - name: Set up environment variables
         run: |
           echo "FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}" >> $GITHUB_ENV
@@ -39,4 +39,4 @@ jobs:
       # Run the scraper script
       - name: Run Scraper
         run: |
-          node inx.js  # Execute your scraping script
+          node inx.js
