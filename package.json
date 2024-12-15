@@ -2,14 +2,13 @@
   "name": "scheduling",
   "version": "1.0.0",
   "description": "",
-  "main": "inx.js",
-  "type": "module",  
+  "main": "index.js",  // Update this if the main file is indeed "index.js"
+  "type": "module",
   "scripts": {
-    "start": "node inx.js"
+    "start": "node index.js"  // Update here if your main script file is index.js
   },
   "dependencies": {
     "dotenv": "^10.0.0",
-    "firebase": "^9.0.0",
     "selenium-webdriver": "^4.0.0",
     "chromedriver": "^100.0.0",
     "firebase-admin": "^11.0.0"
