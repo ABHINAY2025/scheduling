@@ -44,4 +44,4 @@ jobs:
       # Run the scraper script
       - name: Run Scraper
         run: |
-          node inx.js  # Execute your scraping script
+          node index.js  # Execute your scraping script
