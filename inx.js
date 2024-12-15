@@ -2,7 +2,7 @@ require('dotenv').config();  // Load environment variables from .env file
 const { Builder, By, Key, until } = require('selenium-webdriver');
 const { initializeApp } = require("firebase/app");
 const { getFirestore } = require("firebase/firestore");
-const { doc, setDoc, Timestamp } = require('firebase/firestore');
+const { doc, setDoc } = require('firebase/firestore');
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -96,27 +96,27 @@ const logger = {
     const rowText = await totalRow.getText();
     logger.log('Row Content Extracted:', rowText);
     
-    // Locate the last cell in the row (attendance percentage)
-    const percentageCell = await totalRow.findElement(By.xpath("./td[last()]"));
-    const percentage = await percentageCell.getText(); // Get the percentage value
-    logger.log('Attendance Percentage Extracted:', percentage);
+    // Parse the row text to extract meaningful data
+    const [, total, completed, percentage] = rowText.split(/\s+/);
     
-    // Parse the percentage value (ensure it's a valid number)
+    // Prepare data to save in Firestore with robust validation (no timestamp fields)
     const parsedPercentage = parseFloat(percentage.replace('%', '').trim());
     if (isNaN(parsedPercentage)) {
+      logger.error('Invalid percentage value extracted', { percentage });
       throw new Error('Invalid percentage value extracted');
     }
-    
-    // Prepare data to save in Firestore with robust validation (no rawContent)
+
+    // Prepare data without timestamp
     const documentData = {
-      timestamp: Timestamp.fromDate(new Date()),
       percentageComplete: parsedPercentage,  // Store the parsed percentage
-      scrapedAt: Timestamp.fromDate(new Date()) // Use Firestore Timestamp for consistency
     };
-    
+
+    // Validate before saving
+    console.log('Document Data to Save:', documentData);
+
     // Save to Firestore with enhanced error handling
     const documentRef = doc(db, "reports", "performance_total");
-    
+
     try {
       await setDoc(documentRef, documentData);
       logger.log('Data saved to Firestore successfully!', {
