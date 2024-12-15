@@ -19,13 +19,21 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Logging utility
+// Logging utility with custom date format
 const logger = {
   log: (message, data) => {
-    console.log(`[${new Date().toISOString()}] ${message}`, data || '');
+    const formattedDate = new Date().toLocaleString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+    });
+    console.log(`[${formattedDate}] ${message}`, data || '');
   },
   error: (message, error) => {
-    console.error(`[${new Date().toISOString()}] ERROR: ${message}`, error || '');
+    const formattedDate = new Date().toLocaleString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+    });
+    console.error(`[${formattedDate}] ERROR: ${message}`, error || '');
   }
 };
 
@@ -102,8 +110,8 @@ const logger = {
     };
     
     // Validate document data
-    if (isNaN(documentData.total) || isNaN(documentData.completed)) {
-      throw new Error('Invalid numeric data');
+    if (isNaN(documentData.total) || isNaN(documentData.completed) || isNaN(documentData.percentageComplete)) {
+      throw new Error('Invalid numeric data: ' + JSON.stringify(documentData));
     }
     
     // Save to Firestore with enhanced error handling
