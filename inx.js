@@ -96,23 +96,23 @@ const logger = {
     const rowText = await totalRow.getText();
     logger.log('Row Content Extracted:', rowText);
     
-    // Parse the row text to extract meaningful data
-    const [, total, completed, percentage] = rowText.split(/\s+/);
+    // Locate the last cell in the row (attendance percentage)
+    const percentageCell = await totalRow.findElement(By.xpath("./td[last()]"));
+    const percentage = await percentageCell.getText(); // Get the percentage value
+    logger.log('Attendance Percentage Extracted:', percentage);
     
-    // Prepare data to save in Firestore with robust validation
+    // Parse the percentage value (ensure it's a valid number)
+    const parsedPercentage = parseFloat(percentage.replace('%', '').trim());
+    if (isNaN(parsedPercentage)) {
+      throw new Error('Invalid percentage value extracted');
+    }
+    
+    // Prepare data to save in Firestore with robust validation (no rawContent)
     const documentData = {
       timestamp: Timestamp.fromDate(new Date()),
-      total: parseInt(total, 10),  // Convert to integer
-      completed: parseInt(completed, 10),  // Convert to integer
-      percentageComplete: parseFloat(percentage),  // Convert to float
-      rawContent: rowText,
+      percentageComplete: parsedPercentage,  // Store the parsed percentage
       scrapedAt: Timestamp.fromDate(new Date()) // Use Firestore Timestamp for consistency
     };
-    
-    // Validate document data
-    if (isNaN(documentData.total) || isNaN(documentData.completed) || isNaN(documentData.percentageComplete)) {
-      throw new Error('Invalid numeric data: ' + JSON.stringify(documentData));
-    }
     
     // Save to Firestore with enhanced error handling
     const documentRef = doc(db, "reports", "performance_total");
