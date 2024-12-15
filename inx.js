@@ -1,8 +1,7 @@
 require('dotenv').config();  // Load environment variables from .env file
 const { Builder, By, Key, until } = require('selenium-webdriver');
 const { initializeApp } = require("firebase/app");
-const { getFirestore } = require("firebase/firestore");
-const { doc, setDoc, Timestamp } = require('firebase/firestore');
+import { getFirestore, doc, setDoc, Timestamp } from 'firebase/firestore'; 
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -48,7 +47,7 @@ const logger = {
     await driver.get('http://119.235.51.91/ecap/Default.aspx?ReturnUrl=%2fecap%2fmain.aspx');
     
     // Wait for login fields
-    await driver.wait(until.elementLocated(By.name('txtId2')), 10000);
+    await driver.wait(until.elementLocated(By.name('txtId2')), 15000);
     const usernameField = await driver.findElement(By.name('txtId2'));
     const passwordField = await driver.findElement(By.name('txtPwd2'));
     
@@ -59,14 +58,14 @@ const logger = {
     await passwordField.sendKeys(password, Key.RETURN);
     
     // Wait for the iframe and switch to it
-    await driver.wait(until.elementLocated(By.id('capIframeId')), 10000);
+    await driver.wait(until.elementLocated(By.id('capIframeId')), 15000);
     const iframeElement = await driver.findElement(By.id('capIframeId'));
     await driver.switchTo().frame(iframeElement);
     
     // Locate the accordion headers and find the desired one
     const accordionHeaders = await driver.wait(
       until.elementsLocated(By.css('h1.ui-accordion-header')),
-      10000
+      15000
     );
     
     let performanceHeaderFound = false;
@@ -88,7 +87,7 @@ const logger = {
     // Locate the TOTAL row
     const totalRow = await driver.wait(
       until.elementLocated(By.xpath("//tr[@class='reportHeading2WithBackground' and td[text()='TOTAL']]")),
-      10000
+      15000
     );
     
     // Scroll and extract row text
@@ -109,11 +108,16 @@ const logger = {
     
     // Prepare data to save in Firestore with robust validation
     const documentData = {
-      timestamp: Timestamp.fromDate(new Date()),
+      timestamp: Timestamp.fromDate(new Date()),  // Store the current timestamp
       percentageComplete: parsedPercentage,  // Store the parsed percentage
       rawContent: rowText,  // Store raw row content for reference
       scrapedAt: Timestamp.fromDate(new Date()) // Use Firestore Timestamp for consistency
     };
+    
+    // Validate data before saving to Firestore
+    if (!documentData.timestamp || isNaN(documentData.percentageComplete)) {
+      throw new Error('Invalid data, timestamp or percentage is missing');
+    }
     
     // Log the data before saving
     logger.log('Data to be saved in Firestore:', documentData);
