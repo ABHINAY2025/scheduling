@@ -1,8 +1,16 @@
 const fs = require('fs');
 const { Builder, By, Key, until } = require('selenium-webdriver');
+const chrome = require('selenium-webdriver/chrome');
 
 (async function retrieveTotalRow() {
-  let driver = await new Builder().forBrowser('chrome').build();
+  let options = new chrome.Options();
+  options.addArguments('--headless');  // Run Chrome in headless mode
+  options.addArguments('--no-sandbox'); // Needed for some environments (e.g., CI servers)
+
+  let driver = await new Builder()
+    .forBrowser('chrome')
+    .setChromeOptions(options)  // Set the headless options
+    .build();
 
   try {
     // Navigate to the specified page
@@ -11,7 +19,7 @@ const { Builder, By, Key, until } = require('selenium-webdriver');
     await driver.wait(until.elementLocated(By.name('txtId2')), 10000);
     const usernameField = await driver.findElement(By.name('txtId2'));
     const passwordField = await driver.findElement(By.name('txtPwd2'));
-    
+
     // Enter credentials and submit
     const password = "798940";
     await usernameField.sendKeys('22p65a1207');
