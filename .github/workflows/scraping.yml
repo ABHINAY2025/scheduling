@@ -16,4 +16,4 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Run Scraper
-        run: node scraper.js
+        run: node inx.js
