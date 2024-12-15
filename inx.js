@@ -59,14 +59,18 @@ const { doc, setDoc } = require('firebase/firestore'); // Firestore functions
     fs.writeFileSync('totalRow.txt', rowText, 'utf8');
     console.log('Row content saved to totalRow.txt');
 
+    // Prepare data to save in Firestore
+    const documentData = {
+      timestamp: new Date().toISOString(),
+      rowContent: rowText // Ensure this is a string value
+    };
+
+    console.log('Data to be saved to Firestore:', documentData); // Log the data to check
+
     // Save the row content (string) to Firestore
     const documentRef = doc(db, "reports", "performance_total");
 
-    // Ensure that you're storing the row text as a string
-    await setDoc(documentRef, {
-      timestamp: new Date().toISOString(),
-      rowContent: rowText // Ensure this is a string value
-    });
+    await setDoc(documentRef, documentData);
     console.log('Data saved to Firestore successfully!');
 
   } catch (error) {
