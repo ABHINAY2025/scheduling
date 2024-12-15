@@ -132,6 +132,15 @@ async function retrieveTotalRow() {
       rawContent: typeof documentData.rawContent
     });
     
+    // Validate the data structure before saving
+    if (
+      !documentData.timestamp ||
+      isNaN(documentData.percentageComplete) ||
+      typeof documentData.rawContent !== 'string'
+    ) {
+      throw new Error('Invalid document data structure');
+    }
+
     // Save to Firestore with enhanced error handling
     try {
       const docRef = await addDoc(collection(db, "performance_reports"), documentData);
