@@ -35,10 +35,10 @@ jobs:
           echo "FIREBASE_APP_ID=${{ secrets.FIREBASE_APP_ID }}" >> $GITHUB_ENV
           echo "FIREBASE_MEASUREMENT_ID=${{ secrets.FIREBASE_MEASUREMENT_ID }}" >> $GITHUB_ENV
 
-      # Print the API key for debugging (Be cautious with sensitive data)
-      - name: Print Firebase API Key (for debugging)
+      # Debug Firebase API Key (optional step for debugging)
+      - name: Debug Firebase API Key
         run: |
-          echo "FIREBASE_API_KEY=${{FIREBASE_API_KEY}}"
+          echo "FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}"
 
       # Run the scraper script
       - name: Run Scraper
