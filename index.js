@@ -35,21 +35,67 @@ const firestore = getFirestore(app);
     // Wait for the URL to contain "main.aspx" (increased timeout)
     await driver.wait(until.urlContains('main.aspx'), 30000);
 
-    // Wait for an element on the next page to ensure it's fully loaded
-    const element = await driver.wait(until.elementLocated(By.id('someElementId')), 30000); // Replace with an actual element ID on the page
-    await driver.wait(until.elementIsVisible(element), 10000); // Ensure the element is visible
+    // Wait for the iframe and switch to it
+    await driver.wait(until.elementLocated(By.id('capIframeId')), 10000);
+    const iframeElement = await driver.findElement(By.id('capIframeId'));
+    await driver.switchTo().frame(iframeElement);
 
-    console.log('Login successful!');
+    // Locate the accordion headers and find the desired one
+    const accordionHeaders = await driver.wait(
+      until.elementsLocated(By.css('h1.ui-accordion-header')),
+      10000
+    );
 
-    const userData = {
-      username: username,
-      password: password,
-      loginTime: serverTimestamp(),
+    let performanceHeaderFound = false;
+    for (const header of accordionHeaders) {
+      const text = await header.getText();
+      if (text.includes('PERFORMANCE (Present)')) {
+        await driver.executeScript('arguments[0].scrollIntoView(true);', header);
+        await header.click();
+        console.log('Accordion with "PERFORMANCE (Present)" clicked successfully!');
+        performanceHeaderFound = true;
+        break;
+      }
+    }
+
+    if (!performanceHeaderFound) {
+      throw new Error('Performance header not found');
+    }
+
+    // Locate the TOTAL row
+    const totalRow = await driver.wait(
+      until.elementLocated(By.xpath("//tr[@class='reportHeading2WithBackground' and td[text()='TOTAL']]")),
+      10000
+    );
+
+    // Scroll and extract row text
+    await driver.executeScript('arguments[0].scrollIntoView(true);', totalRow);
+    const rowText = await totalRow.getText();
+    console.log('Row Content Extracted:', rowText);
+
+    // Locate the last cell in the row (attendance percentage)
+    const percentageCell = await totalRow.findElement(By.xpath("./td[last()]"));
+    const percentage = await percentageCell.getText(); // Get the percentage value
+    console.log('Attendance Percentage Extracted:', percentage);
+
+    // Parse the percentage value (ensure it's a valid number)
+    const parsedPercentage = parseFloat(percentage.replace('%', '').trim());
+    if (isNaN(parsedPercentage)) {
+      throw new Error('Invalid percentage value extracted');
+    }
+
+    // Prepare data to save in Firestore with robust validation
+    const documentData = {
+      timestamp: serverTimestamp(),
+      percentageComplete: parsedPercentage,  // Store the parsed percentage
+      rawContent: rowText,  // Store raw row content for reference
+      scrapedAt: serverTimestamp() // Use Firestore Timestamp for consistency
     };
 
-    await addDoc(collection(firestore, 'userLogins'), userData);
+    // Save to Firestore with enhanced error handling
+    await addDoc(collection(firestore, "reports"), documentData);
+    console.log('Data saved to Firestore successfully!');
 
-    console.log('User data successfully saved to Firestore!');
   } catch (error) {
     console.error('An error occurred:', error);
   } finally {
