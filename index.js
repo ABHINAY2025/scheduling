@@ -1,12 +1,20 @@
-import * as firebase from 'firebase-admin';
+import firebase from 'firebase/app';
+import 'firebase/firestore';
 import { Builder, By, Key, until } from 'selenium-webdriver';
 
-// Initialize Firebase with your service account credentials
-firebase.initializeApp({
-  credential: firebase.credential.cert('./path/to/your/serviceAccountKey.json'),
-  databaseURL: 'https://your-database-url.firebaseio.com',
-});
+// Firebase configuration for Firebase JS SDK
+const firebaseConfig = {
+  apiKey: "AIzaSyDgjGrcTmmh8i7ZURsXoZEjqFDbDZY0hq8",
+  authDomain: "vbit-53042.firebaseapp.com",
+  projectId: "vbit-53042",
+  storageBucket: "vbit-53042.firebasestorage.app",
+  messagingSenderId: "378194086673",
+  appId: "1:378194086673:web:efd4212fa0104a1091dab0",
+  measurementId: "G-MD604N29D6"
+};
 
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
 const firestore = firebase.firestore();
 
 (async function loginToEcap() {
