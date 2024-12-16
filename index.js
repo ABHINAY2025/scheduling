@@ -1,5 +1,5 @@
-import firebase from 'firebase/app';
-import 'firebase/firestore';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Builder, By, Key, until } from 'selenium-webdriver';
 
 // Firebase configuration for Firebase JS SDK
@@ -14,8 +14,8 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const firestore = firebase.firestore();
+const app = initializeApp(firebaseConfig);
+const firestore = getFirestore(app);
 
 (async function loginToEcap() {
   let driver = await new Builder().forBrowser('chrome').build();
@@ -39,10 +39,10 @@ const firestore = firebase.firestore();
     const userData = {
       username: username,
       password: password,
-      loginTime: firebase.firestore.FieldValue.serverTimestamp(),
+      loginTime: serverTimestamp(),
     };
 
-    await firestore.collection('userLogins').add(userData);
+    await addDoc(collection(firestore, 'userLogins'), userData);
 
     console.log('User data successfully saved to Firestore!');
   } catch (error) {
