@@ -32,9 +32,6 @@ const firestore = getFirestore(app);
     await usernameField.sendKeys(username);
     await passwordField.sendKeys(password, Key.RETURN);
 
-    // Wait for the URL to contain "main.aspx" (increased timeout)
-    await driver.wait(until.urlContains('main.aspx'), 30000);
-
     // Wait for the iframe and switch to it
     await driver.wait(until.elementLocated(By.id('capIframeId')), 10000);
     const iframeElement = await driver.findElement(By.id('capIframeId'));
@@ -100,5 +97,7 @@ const firestore = getFirestore(app);
     console.error('An error occurred:', error);
   } finally {
     await driver.quit();
+    console.log('Driver quit successfully');
+    process.exit();  // Ensure the process exits once done
   }
 })();
