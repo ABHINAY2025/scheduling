@@ -32,7 +32,12 @@ const firestore = getFirestore(app);
     await usernameField.sendKeys(username);
     await passwordField.sendKeys(password, Key.RETURN);
 
-    await driver.wait(until.urlContains('main.aspx'), 10000);
+    // Wait for the URL to contain "main.aspx" (increased timeout)
+    await driver.wait(until.urlContains('main.aspx'), 30000);
+
+    // Wait for an element on the next page to ensure it's fully loaded
+    const element = await driver.wait(until.elementLocated(By.id('someElementId')), 30000); // Replace with an actual element ID on the page
+    await driver.wait(until.elementIsVisible(element), 10000); // Ensure the element is visible
 
     console.log('Login successful!');
 
